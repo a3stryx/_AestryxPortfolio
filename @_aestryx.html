@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>@_aestryx neoOS</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
+
+<style>
+*{box-sizing:border-box}
+
+body{
+  margin:0;
+  overflow:hidden;
+  font-family:"Space Grotesk",sans-serif;
+  background:#04050a;
+  color:white;
+}
+
+/* ================= LOCK ================= */
+.lock{
+  position:fixed;
+  inset:0;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  align-items:center;
+  background:radial-gradient(circle at center,#0a1022,#05060d);
+  z-index:999;
+  cursor:pointer;
+  transition:opacity 1s ease, transform 1s ease;
+}
+
+.lock::before{
+  content:"";
+  position:absolute;
+  width:600px;
+  height:600px;
+  background:radial-gradient(circle,rgba(77,235,255,.15),transparent 65%);
+  filter:blur(90px);
+  animation:pulse 3s ease-in-out infinite;
+}
+
+@keyframes pulse{
+  0%,100%{transform:scale(1)}
+  50%{transform:scale(1.08)}
+}
+
+.lock.hide{
+  opacity:0;
+  transform:scale(1.2);
+  pointer-events:none;
+}
+
+/* ================= BACKGROUND ================= */
+canvas{
+  position:fixed;
+  inset:0;
+  z-index:0;
+}
+
+/* glow */
+#glow{
+  position:fixed;
+  width:500px;
+  height:500px;
+  border-radius:50%;
+  background:radial-gradient(circle,
+    rgba(77,235,255,.10),
+    rgba(124,92,255,.06),
+    transparent 70%);
+  filter:blur(110px);
+  pointer-events:none;
+  transform:translate(-50%,-50%);
+  z-index:1;
+}
+
+/* ================= TOPBAR ================= */
+.topbar{
+  position:fixed;
+  top:0;left:0;right:0;
+  height:54px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  padding:0 16px;
+  background:rgba(10,14,30,.45);
+  backdrop-filter:blur(18px);
+  border-bottom:1px solid rgba(77,235,255,.06);
+  z-index:10;
+}
+
+/* ================= COOKIE ================= */
+.cookie{
+  position:fixed;
+  bottom:14px;
+  left:50%;
+  transform:translateX(-50%);
+  display:flex;
+  gap:10px;
+  align-items:center;
+  padding:10px 12px;
+  background:rgba(10,14,30,.6);
+  backdrop-filter:blur(18px);
+  border:1px solid rgba(77,235,255,.12);
+  border-radius:14px;
+  z-index:100;
+}
+
+.cookie button{
+  border:none;
+  padding:6px 10px;
+  border-radius:10px;
+  cursor:pointer;
+  background:rgba(77,235,255,.10);
+  color:white;
+}
+
+/* ================= SCENE ================= */
+.scene{
+  position:fixed;
+  inset:0;
+}
+
+/* ================= PANEL ================= */
+.panel{
+  position:absolute;
+  width:260px;
+  padding:14px;
+  border-radius:22px;
+
+  background:rgba(10,14,30,.55);
+  backdrop-filter:blur(26px);
+
+  border:1px solid rgba(77,235,255,.12);
+
+  box-shadow:
+    0 30px 90px rgba(0,0,0,.65),
+    0 0 25px rgba(98, 77, 255, 0.04);
+
+  cursor:pointer;
+  transition:0.35s ease;
+}
+
+.panel:hover{
+  transform:translate(-50%,-50%) scale(1.05);
+}
+
+.panel.dim{
+  opacity:.18;
+  filter:blur(1px);
+}
+
+/* OPEN WINDOW */
+.panel.open{
+  position:fixed;
+  left:50% !important;
+  top:50% !important;
+  transform:translate(-50%,-50%) scale(1.1);
+  width:min(780px,88vw);
+  z-index:50;
+}
+
+/* ================= TRAFFIC ================= */
+.traffic{
+  display:flex;
+  gap:6px;
+  margin-bottom:10px;
+}
+
+.dot{
+  width:10px;
+  height:10px;
+  border-radius:50%;
+}
+
+.red{background:#ff5f57}
+.yellow{background:#febc2e}
+.green{background:#28c840}
+</style>
+</head>
+
+<body>
+
+<div class="lock" id="lock">
+  <h1>@_aestryx</h1>
+  <p style="opacity:.6">click to enter neoOS</p>
+</div>
+
+<canvas id="bg"></canvas>
+<canvas id="tri"></canvas>
+<div id="glow"></div>
+
+<div class="topbar">
+  <div>@_aestryx</div>
+  <div>All rights reserved</div>
+</div>
+
+<div class="cookie" id="cookie">
+  <div style="font-size:13px;opacity:.7">cookie preferences</div>
+  <button onclick="setCookie('essential')">essential</button>
+  <button onclick="setCookie('all')">all</button>
+  <button onclick="setCookie('reject')">reject</button>
+</div>
+
+<div class="scene" id="scene"></div>
+
+<script>
+
+/* LOCK */
+const lock=document.getElementById("lock");
+lock.onclick=()=>{
+  lock.classList.add("hide");
+  setTimeout(()=>lock.style.display="none",1000);
+};
+
+/* COOKIE */
+const cookie=document.getElementById("cookie");
+function setCookie(v){
+  localStorage.setItem("cookie",v);
+  cookie.style.display="none";
+}
+if(localStorage.getItem("cookie")) cookie.style.display="none";
+
+/* GLOW */
+const glow=document.getElementById("glow");
+addEventListener("mousemove",(e)=>{
+  glow.style.left=e.clientX+"px";
+  glow.style.top=e.clientY+"px";
+});
+
+/* DATA */
+const pages=[
+{t:"Design Systems",r:"UI/UX",d:"structure logic"},
+{t:"Systems",r:"frontend",d:"architecture"},
+{t:"Developer",r:"engineer",d:"interaction"},
+{t:"Contact",r:"social",d:"@_aestryx"}
+];
+
+const scene=document.getElementById("scene");
+let panels=[];
+let openIndex=null;
+
+/* BUILD */
+pages.forEach((p,i)=>{
+const el=document.createElement("div");
+el.className="panel";
+
+el.innerHTML=`
+<div class="traffic">
+  <div class="dot red"></div>
+  <div class="dot yellow"></div>
+  <div class="dot green"></div>
+</div>
+<h3>${p.t}</h3>
+<div style="opacity:.7;font-size:13px">${p.r}</div>
+<div style="margin-top:8px">${p.d}</div>
+`;
+
+scene.appendChild(el);
+panels.push(el);
+
+el.onclick=()=>toggle(i);
+});
+
+/* ORBIT */
+function update(){
+if(openIndex===null){
+const r=Math.min(innerWidth,innerHeight)*0.28;
+
+panels.forEach((p,i)=>{
+const a=i*(Math.PI*2/pages.length)+performance.now()*0.00025;
+
+const x=innerWidth/2+Math.cos(a)*r;
+const y=innerHeight/2+Math.sin(a)*r*0.6;
+
+p.style.left=x+"px";
+p.style.top=y+"px";
+p.style.transform="translate(-50%,-50%)";
+});
+}
+requestAnimationFrame(update);
+}
+update();
+
+/* OPEN/CLOSE */
+function toggle(i){
+if(openIndex===i){
+close();
+return;
+}
+openIndex=i;
+
+panels.forEach((p,idx)=>{
+p.classList.toggle("dim",idx!==i);
+});
+
+panels[i].classList.add("open");
+}
+
+function close(){
+if(openIndex===null) return;
+
+panels[openIndex].classList.remove("open");
+panels.forEach(p=>p.classList.remove("dim"));
+openIndex=null;
+}
+
+/* BACKGROUND */
+const bg=document.getElementById("bg");
+const btx=bg.getContext("2d");
+
+const tri=document.getElementById("tri");
+const ctx=tri.getContext("2d");
+
+function resize(){
+bg.width=tri.width=innerWidth;
+bg.height=tri.height=innerHeight;
+}
+resize();
+addEventListener("resize",resize);
+
+/* softer gradient field */
+let t=0;
+function drawBG(){
+t+=0.002;
+
+const x=bg.width/2+Math.sin(t)*180;
+const y=bg.height/2+Math.cos(t)*180;
+
+const g=btx.createRadialGradient(x,y,0,bg.width/2,bg.height/2,bg.width);
+
+g.addColorStop(0,"rgba(77,235,255,0.06)");
+g.addColorStop(0.5,"rgba(124,92,255,0.04)");
+g.addColorStop(1,"rgba(4,5,10,1)");
+
+btx.fillStyle=g;
+btx.fillRect(0,0,bg.width,bg.height);
+
+requestAnimationFrame(drawBG);
+}
+drawBG();
+
+/* softer particles */
+const particles=[];
+for(let i=0;i<80;i++){
+particles.push({
+x:Math.random()*innerWidth,
+y:Math.random()*innerHeight,
+v:0.25+Math.random()*0.3
+});
+}
+
+function drawTri(){
+ctx.clearRect(0,0,tri.width,tri.height);
+
+for(let p of particles){
+p.y-=p.v;
+p.x+=Math.sin(p.y*0.01)*0.2;
+
+if(p.y<-10){
+p.y=tri.height+10;
+p.x=Math.random()*tri.width;
+}
+
+ctx.fillStyle="rgba(180,220,255,0.04)";
+ctx.beginPath();
+ctx.moveTo(p.x,p.y);
+ctx.lineTo(p.x+5,p.y+10);
+ctx.lineTo(p.x-5,p.y+10);
+ctx.closePath();
+ctx.fill();
+}
+
+requestAnimationFrame(drawTri);
+}
+drawTri();
+
+</script>
+
+</body>
+</html>
