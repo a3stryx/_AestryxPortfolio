@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>@_aestryx</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet"/>
+
+<style>
+*{box-sizing:border-box}
+
+body{
+  margin:0;
+  overflow:hidden;
+  font-family:"Space Grotesk",sans-serif;
+  background:#050814;
+  color:white;
+}
+
+.loader{
+  position:fixed;
+  inset:0;
+  background:black;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  align-items:center;
+  z-index:999;
+  transition:opacity 1.2s ease, filter 1.2s ease;
+}
+
+.loader.hidden{
+  opacity:0;
+  filter:blur(20px);
+  pointer-events:none;
+}
+
+.l1,.l2{
+  opacity:0;
+  transform:translateY(20px);
+  transition:1.2s ease;
+  text-align:center;
+}
+
+.l1.show,.l2.show{
+  opacity:1;
+  transform:translateY(0);
+}
+
+.l1{font-size:1.3rem}
+.l2{margin-top:10px;opacity:.7}
+
+.cookie{
+  position:fixed;
+  inset:0;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  z-index:998;
+  background:rgba(0,0,0,.35);
+  backdrop-filter:blur(8px);
+  opacity:0;
+  pointer-events:none;
+  transition:opacity .6s ease;
+}
+
+.cookie.show{
+  opacity:1;
+  pointer-events:auto;
+}
+
+.cookieBox{
+  width:min(520px,90vw);
+  padding:16px 18px;
+  border-radius:14px;
+  background:rgba(10,18,34,.88);
+  border:1px solid rgba(140,180,255,.25);
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:16px;
+  transform:scale(.95);
+  opacity:0;
+  transition:all .5s ease;
+}
+
+.cookie.show .cookieBox{
+  transform:scale(1);
+  opacity:1;
+}
+
+.cookieText h3{
+  margin:0;
+  font-size:14px;
+  text-transform:lowercase;
+}
+
+.cookieText p{
+  margin:4px 0 0;
+  opacity:.6;
+  font-size:12px;
+}
+
+.cookieBox button{
+  padding:8px 14px;
+  border-radius:10px;
+  border:1px solid rgba(140,180,255,.3);
+  background:rgba(0,0,0,.3);
+  color:white;
+  cursor:pointer;
+}
+
+.topbar{
+  position:fixed;
+  top:0;left:0;right:0;
+  height:64px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  padding:0 16px;
+  background:rgba(10,18,35,.35);
+  backdrop-filter:blur(18px);
+  border-bottom:1px solid rgba(140,180,255,.15);
+  z-index:50;
+  font-size:14px;
+  font-family:"Baloo 2", cursive;
+}
+
+.gradientText{
+  background:linear-gradient(90deg,#8ec5ff,#305dff,#7ee0ff);
+  background-size:200% 200%;
+  -webkit-background-clip:text;
+  -webkit-text-fill-color:transparent;
+  animation:grad 6s ease infinite;
+}
+
+@keyframes grad{
+  0%{background-position:0% 50%}
+  50%{background-position:100% 50%}
+  100%{background-position:0% 50%}
+}
+
+canvas{
+  position:fixed;
+  inset:0;
+  z-index:0;
+}
+
+.scene{
+  position:relative;
+  width:100vw;
+  height:100vh;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+}
+
+.panel{
+  position:absolute;
+  width:clamp(200px, 28vw, 340px);
+  padding:16px;
+  border-radius:16px;
+  background:rgba(10,18,34,.55);
+  border:1px solid rgba(140,180,255,.2);
+  backdrop-filter:blur(14px);
+  box-shadow:0 20px 60px rgba(0,0,0,.35);
+  transform:translate(-50%,-50%);
+  cursor:pointer;
+  transition:transform .6s cubic-bezier(.2,.8,.2,1), width .4s ease, background .4s ease;
+}
+
+.panel:hover{
+  transform:translate(-50%,-50%) scale(1.05);
+}
+
+.panel.open{
+  width:clamp(260px, 60vw, 520px);
+  background:rgba(10,18,34,.92);
+  z-index:10;
+}
+
+.panel.dim{
+  opacity:.2;
+  filter:blur(1px);
+}
+
+.side{
+  position:fixed;
+  top:50%;
+  transform:translateY(-50%);
+  width:46px;height:46px;
+  border-radius:10px;
+  border:1px solid rgba(140,180,255,.2);
+  background:rgba(0,0,0,.25);
+  color:white;
+  cursor:pointer;
+  z-index:20;
+}
+
+.left{left:10px}
+.right{right:10px}
+
+/* ===== RESPONSIVE FIX ===== */
+@media (max-width: 900px){
+  .panel{
+    width:240px;
+  }
+
+  .panel.open{
+    width:85vw;
+  }
+}
+
+@media (max-width: 600px){
+  .panel{
+    width:220px;
+  }
+
+  .panel.open{
+    width:92vw;
+  }
+
+  .topbar{
+    font-size:12px;
+    height:58px;
+  }
+
+  .side{
+    width:40px;
+    height:40px;
+  }
+}
+</style>
+</head>
+
+<body>
+
+<div class="loader" id="loader">
+  <div class="l1" id="t1">yeah I’ve been building websites since 2019</div>
+  <div class="l2" id="t2">@_aestryx</div>
+</div>
+
+<div class="cookie" id="cookie">
+  <div class="cookieBox">
+    <div class="cookieText">
+      <h3>this website uses essential cookies</h3>
+      <p>@_aestryx — All rights reserved</p>
+    </div>
+    <button id="accept">Accept</button>
+  </div>
+</div>
+
+<div class="topbar">
+  <div class="gradientText">@_aestryx</div>
+  <div class="gradientText">all rights reserved</div>
+</div>
+
+<canvas id="bg"></canvas>
+
+<button class="side left" id="prev">◀</button>
+<button class="side right" id="next">▶</button>
+
+<div class="scene">
+  <div id="world"></div>
+</div>
+
+<script>
+
+const loader=document.getElementById("loader");
+const t1=document.getElementById("t1");
+const t2=document.getElementById("t2");
+
+setTimeout(()=>t1.classList.add("show"),500);
+setTimeout(()=>t2.classList.add("show"),1200);
+setTimeout(()=>loader.classList.add("hidden"),2600);
+
+const cookie=document.getElementById("cookie");
+const accept=document.getElementById("accept");
+
+setTimeout(()=>cookie.classList.add("show"),3000);
+
+accept.onclick=()=>{
+  cookie.style.opacity="0";
+  setTimeout(()=>cookie.remove(),600);
+};
+
+const pages=[
+{title:"Design Systems",role:"UI / UX Architecture",text:"UI structure, consistency, clean layout logic."},
+{title:"Systems",role:"Frontend Architecture",text:"Reusable code patterns + scalable logic."},
+{title:"Developer",role:"Frontend Engineer",text:"Motion, interaction, and clean frontend builds."},
+{title:"Contact",role:"Collaboration",text:"Discord: @_aestryx"}
+];
+
+const world=document.getElementById("world");
+
+let angle=0;
+let target=0;
+let openIndex=null;
+
+const panels=[];
+
+function init(){
+pages.forEach((p,i)=>{
+const el=document.createElement("div");
+el.className="panel";
+el.innerHTML=`<h3>${p.title}</h3><div style="opacity:.6;font-size:13px">${p.role}</div><div style="opacity:.85;margin-top:6px">${p.text}</div>`;
+el.onclick=()=>toggle(i);
+world.appendChild(el);
+panels.push(el);
+});
+}
+init();
+
+function toggle(i){
+const el=panels[i];
+if(openIndex===i){
+el.classList.remove("open");
+panels.forEach(p=>p.classList.remove("dim"));
+openIndex=null;
+return;
+}
+openIndex=i;
+panels.forEach((p,idx)=>p.classList.toggle("dim",idx!==i));
+el.classList.add("open");
+}
+
+next.onclick=()=>target+=Math.PI/2;
+prev.onclick=()=>target-=Math.PI/2;
+
+function radius(){
+const w=innerWidth;
+if(w<600) return Math.min(innerHeight,innerWidth)*0.22;
+if(w<1000) return Math.min(innerHeight,innerWidth)*0.26;
+return Math.min(innerHeight,innerWidth)*0.3;
+}
+
+function animate(){
+if(openIndex===null){
+angle+=(target-angle)*0.08;
+const r=radius();
+panels.forEach((p,i)=>{
+const a=angle+i*(Math.PI*2/pages.length);
+const x=Math.cos(a)*r;
+const y=Math.sin(a)*r;
+p.style.transform=`translate(${x}px,${y}px) translate(-50%,-50%)`;
+});
+}
+requestAnimationFrame(animate);
+}
+animate();
+
+const c=document.getElementById("bg");
+const ctx=c.getContext("2d");
+
+function resize(){
+c.width=innerWidth;
+c.height=innerHeight;
+}
+resize();
+addEventListener("resize",resize);
+
+const stars=Array.from({length:160},()=>({
+x:Math.random()*innerWidth,
+y:Math.random()*innerHeight,
+r:Math.random()*1.2
+}));
+
+function draw(){
+ctx.clearRect(0,0,c.width,c.height);
+const t=performance.now()*0.00008;
+for(let s of stars){
+s.x+=Math.sin(t+s.y*0.01)*0.15;
+s.y+=0.06;
+if(s.y>c.height){
+s.y=0;
+s.x=Math.random()*c.width;
+}
+ctx.fillStyle="rgba(255,255,255,.55)";
+ctx.beginPath();
+ctx.arc(s.x,s.y,s.r,0,Math.PI*2);
+ctx.fill();
+}
+requestAnimationFrame(draw);
+}
+draw();
+
+</script>
+
+</body>
+</html>
